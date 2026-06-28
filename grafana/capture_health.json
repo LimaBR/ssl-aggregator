@@ -1,0 +1,247 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_POSTGRESQL",
+      "label": "PostgreSQL",
+      "description": "robot_data database",
+      "type": "datasource",
+      "pluginId": "grafana-postgresql-datasource",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["ssl-aggregator"],
+  "templating": { "list": [] },
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "ssl-aggregator — capture health",
+  "uid": "ssl-agg-health",
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Robot packets received",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT count(*) AS received FROM robot.telemetry WHERE $__timeFilter(rx_wall);"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Robot lost packets (gaps in packet_id)",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 10 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE((max(packet_id) - min(packet_id) + 1) - count(*), 0) AS lost FROM robot.telemetry WHERE $__timeFilter(rx_wall) AND packet_id IS NOT NULL;"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Vision robot detections",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT count(*) AS detections FROM vision.robot_detection WHERE $__timeFilter(rx_wall);"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Vision ball detections (LED on)",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT count(*) AS detections FROM vision.ball_detection WHERE $__timeFilter(rx_wall);"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Robot packet rate (per bucket)",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "time_series",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(rx_wall, $__interval, 0), count(*) AS \"packets\" FROM robot.telemetry WHERE $__timeFilter(rx_wall) GROUP BY 1 ORDER BY 1;"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Vision detection rate (per bucket)",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "time_series",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(rx_wall, $__interval, 0), count(*) AS \"robot detections\" FROM vision.robot_detection WHERE $__timeFilter(rx_wall) GROUP BY 1 ORDER BY 1;"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "time_series",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(rx_wall, $__interval, 0), count(*) AS \"ball detections\" FROM vision.ball_detection WHERE $__timeFilter(rx_wall) GROUP BY 1 ORDER BY 1;"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "SYNC CHECK — robot LED vs camera ball presence",
+      "description": "If the two square waves track each other (offset by the vision pipeline latency), the LED/ball time-sync scheme is working.",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": { "min": -0.1, "max": 1.2, "custom": { "drawStyle": "line", "lineInterpolation": "stepAfter", "lineWidth": 2, "fillOpacity": 15 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "time_series",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(rx_wall, $__interval, 0), max(led_state) AS \"robot LED\" FROM robot.telemetry WHERE $__timeFilter(rx_wall) GROUP BY 1 ORDER BY 1;"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "time_series",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(rx_wall, $__interval, 0), LEAST(count(*), 1) AS \"camera ball present\" FROM vision.ball_detection WHERE $__timeFilter(rx_wall) GROUP BY 1 ORDER BY 1;"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Robot wheel speeds (encoder vs setpoint)",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "fieldConfig": { "defaults": { "unit": "velocityms", "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 0 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "time_series",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(rx_wall, $__interval), avg(wheel0_speed) AS \"wheel0 speed\", avg(wheel1_speed) AS \"wheel1 speed\", avg(wheel0_setpoint) AS \"wheel0 setpoint\", avg(wheel1_setpoint) AS \"wheel1 setpoint\" FROM robot.telemetry WHERE $__timeFilter(rx_wall) GROUP BY 1 ORDER BY 1;"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Robot IMU (accel x/y, gyro z)",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 0 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "time_series",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(rx_wall, $__interval), avg(imu_accel_x) AS \"accel x\", avg(imu_accel_y) AS \"accel y\", avg(imu_gyro_z) AS \"gyro z\" FROM robot.telemetry WHERE $__timeFilter(rx_wall) GROUP BY 1 ORDER BY 1;"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Robot position (camera, mm)",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "lengthmm", "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 0 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "time_series",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(rx_wall, $__interval), avg(x) AS \"x\", avg(y) AS \"y\" FROM vision.robot_detection WHERE $__timeFilter(rx_wall) AND confidence > 0.5 GROUP BY 1 ORDER BY 1;"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Robot orientation (camera, rad)",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "radian", "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 0 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${DS_POSTGRESQL}" },
+          "format": "time_series",
+          "editorMode": "code",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(rx_wall, $__interval), avg(orientation) AS \"orientation\" FROM vision.robot_detection WHERE $__timeFilter(rx_wall) AND confidence > 0.5 GROUP BY 1 ORDER BY 1;"
+        }
+      ]
+    }
+  ]
+}

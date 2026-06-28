@@ -1,0 +1,14 @@
+/build/
+*.o
+*.so
+*.a
+# generated protobuf sources
+*.pb.cc
+*.pb.h
+# local secrets / env overrides
+*.env
+.env
+# data exports
+/export_*/
+*.tar.gz
+*.dump
