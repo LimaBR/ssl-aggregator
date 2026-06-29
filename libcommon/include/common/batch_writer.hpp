@@ -18,9 +18,9 @@ namespace common {
 // when either `batch_size` rows are buffered or `max_latency` has elapsed.
 //
 // Each Row is turned into a "(v1, v2, ...)" VALUES tuple by `Formatter`; the
-// writer assembles one multi-row INSERT ... ON CONFLICT DO NOTHING per flush.
-// ON CONFLICT DO NOTHING makes replay/duplicate inserts harmless (and is a
-// no-op on tables without a unique constraint, e.g. the vision tables).
+// writer assembles one plain multi-row INSERT per flush. There is deliberately
+// no ON CONFLICT clause: every parsed packet is stored, so a firmware reboot
+// (which restarts packet_id) can never cause a row to be silently dropped.
 template <typename Row>
 class BatchWriter {
 public:
@@ -79,7 +79,7 @@ private:
             if (i) sql += ',';
             sql += fmt_(batch[i]);
         }
-        sql += " ON CONFLICT DO NOTHING;";
+        sql += ';';
 
         for (int attempt = 0; attempt < 3; ++attempt) {
             try {

@@ -24,23 +24,7 @@ namespace {
 const char* kColumns =
     "rx_wall, rx_monotonic, packet_id, "
     "wheel0_speed, wheel1_speed, wheel0_setpoint, wheel1_setpoint, "
-    "imu_accel_x, imu_accel_y, imu_gyro_z, led_state";
-
-std::string format_row(const Telemetry& t) {
-    std::string s = "(";
-    s += common::sql_timestamp(t.rx.wall);          s += ',';
-    s += common::sql_float(t.rx.monotonic);         s += ',';
-    s += common::sql_int(static_cast<long long>(t.packet_id)); s += ',';
-    s += common::sql_float(t.wheel0_speed);         s += ',';
-    s += common::sql_float(t.wheel1_speed);         s += ',';
-    s += common::sql_float(t.wheel0_setpoint);      s += ',';
-    s += common::sql_float(t.wheel1_setpoint);      s += ',';
-    s += common::sql_float(t.imu_accel_x);          s += ',';
-    s += common::sql_float(t.imu_accel_y);          s += ',';
-    s += common::sql_float(t.imu_gyro_z);           s += ',';
-    s += common::sql_int(t.led_state);              s += ')';
-    return s;
-}
+    "imu_accel_x, imu_accel_y, imu_gyro_z, led_state, capture_session";
 
 }  // namespace
 
@@ -59,14 +43,34 @@ int main() {
     const int batch = common::env_int("DB_BATCH_SIZE", 50);
     const int latency_ms = common::env_int("DB_MAX_LATENCY_MS", 200);
 
+    // One capture_session value per logger run, stamped on every row so each run
+    // is self-identifying in the database (no post-hoc attribution guesswork).
+    const std::string session_sql = common::sql_timestamp(common::now_rx().wall);
+    auto format_row = [session_sql](const Telemetry& t) {
+        std::string s = "(";
+        s += common::sql_timestamp(t.rx.wall);          s += ',';
+        s += common::sql_float(t.rx.monotonic);         s += ',';
+        s += common::sql_int(static_cast<long long>(t.packet_id)); s += ',';
+        s += common::sql_float(t.wheel0_speed);         s += ',';
+        s += common::sql_float(t.wheel1_speed);         s += ',';
+        s += common::sql_float(t.wheel0_setpoint);      s += ',';
+        s += common::sql_float(t.wheel1_setpoint);      s += ',';
+        s += common::sql_float(t.imu_accel_x);          s += ',';
+        s += common::sql_float(t.imu_accel_y);          s += ',';
+        s += common::sql_float(t.imu_gyro_z);           s += ',';
+        s += common::sql_int(t.led_state);              s += ',';
+        s += session_sql;                               s += ')';
+        return s;
+    };
+
     common::BlockingQueue<Telemetry> queue;
     common::BatchWriter<Telemetry> writer(conninfo, "robot.telemetry", kColumns,
                                           format_row, batch,
                                           std::chrono::milliseconds(latency_ms));
     std::jthread worker([&] { writer.run(queue, stop); });
 
-    std::println("robot_logger: listening on {}:{} -> robot.telemetry", group,
-                 port);
+    std::println("robot_logger: listening on {}:{} -> robot.telemetry "
+                 "(capture_session={})", group, port, session_sql);
 
     int rc = 0;
     try {

@@ -191,6 +191,13 @@ Two helpers in `scripts/` (both default to the `.env` credentials):
   packets. That is why the firmware emits `packet_id` — gaps are detectable
   (logged as `lost=` in the stats line) and the missing samples are simply absent
   from the dataset, not silently misaligned.
+- **No silent drops / `capture_session`:** the robot table has **no**
+  `UNIQUE(packet_id)` constraint. `packet_id` restarts at 0 on every STM32 boot,
+  so a unique index + `ON CONFLICT DO NOTHING` would silently discard real data
+  the next time ranges overlapped. Every parsed packet is now stored. Each logger
+  run also stamps a `capture_session` (its start timestamp) on every row, so runs
+  are self-identifying — order/segment analysis by `(capture_session, packet_id)`.
+  (A firmware-side `boot_id` is planned to also make individual boots explicit.)
 
 ## Robot wire format
 

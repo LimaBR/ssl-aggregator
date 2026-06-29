@@ -20,7 +20,7 @@ mkdir -p "$OUTDIR"
 echo "Exporting $DB -> $OUTDIR/"
 
 # Client-side \copy writes to the local filesystem (no server FS access needed).
-psql "$CONN" -c "\copy (SELECT * FROM robot.telemetry        ORDER BY packet_id) TO '$OUTDIR/robot_telemetry.csv'        WITH CSV HEADER"
+psql "$CONN" -c "\copy (SELECT * FROM robot.telemetry        ORDER BY id)        TO '$OUTDIR/robot_telemetry.csv'        WITH CSV HEADER"
 psql "$CONN" -c "\copy (SELECT * FROM vision.robot_detection ORDER BY t_capture) TO '$OUTDIR/vision_robot_detection.csv' WITH CSV HEADER"
 psql "$CONN" -c "\copy (SELECT * FROM vision.ball_detection  ORDER BY t_capture) TO '$OUTDIR/vision_ball_detection.csv'  WITH CSV HEADER"
 
