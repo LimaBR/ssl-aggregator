@@ -12,3 +12,9 @@
 /export_*/
 *.tar.gz
 *.dump
+
+# python analysis
+.venv/
+__pycache__/
+*.pyc
+analysis/figures/
