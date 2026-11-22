@@ -24,5 +24,6 @@ sudo -u postgres env PGPASSWORD="$WRITER_PW" GRAFANA_PASSWORD="$GRAFANA_PW" \
 # Apply the table schemas (no secrets; run as postgres for default privileges).
 sudo -u postgres psql -v ON_ERROR_STOP=1 -d robot_data < "$ROOT/sql/01_robot.sql"
 sudo -u postgres psql -v ON_ERROR_STOP=1 -d robot_data < "$ROOT/sql/02_vision.sql"
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d robot_data < "$ROOT/sql/04_drone.sql"
 
-echo "Done: database robot_data, schemas robot/vision, roles robot_writer + grafana_ro."
+echo "Done: database robot_data, schemas robot/vision/drone, roles robot_writer + grafana_ro."

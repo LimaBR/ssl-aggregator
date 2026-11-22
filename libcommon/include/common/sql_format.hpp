@@ -3,6 +3,7 @@
 #include <format>
 #include <optional>
 #include <string>
+#include <string_view>
 
 // Helpers to format machine-generated numeric values as SQL literals for use
 // inside generated multi-row INSERTs. These values are produced by us (sensor
@@ -24,6 +25,28 @@ inline std::string sql_int(long long v) { return std::format("{}", v); }
 
 inline std::string sql_int(std::optional<long long> v) {
     return v ? std::format("{}", *v) : std::string("NULL");
+}
+
+inline std::string sql_bool(bool v) { return v ? "TRUE" : "FALSE"; }
+
+// Text literal for values that come from the network (e.g. the drone's JSON
+// messages), so unlike the numeric helpers above they are escaped: single
+// quotes are doubled and NUL bytes removed. With standard_conforming_strings
+// on (the PostgreSQL default), backslashes are literal in '...' strings.
+inline std::string sql_text(std::string_view v) {
+    std::string s = "'";
+    s.reserve(v.size() + 2);
+    for (char c : v) {
+        if (c == '\0') continue;
+        if (c == '\'') s += '\'';
+        s += c;
+    }
+    s += '\'';
+    return s;
+}
+
+inline std::string sql_text_opt(const std::optional<std::string>& v) {
+    return v ? sql_text(*v) : std::string("NULL");
 }
 
 }  // namespace common

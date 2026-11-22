@@ -58,34 +58,35 @@ GRANT  CONNECT ON DATABASE robot_data TO robot_writer, grafana_ro;
 
 CREATE SCHEMA IF NOT EXISTS robot;
 CREATE SCHEMA IF NOT EXISTS vision;
+CREATE SCHEMA IF NOT EXISTS drone;   -- dji-relay drone_logger (tables in 04_drone.sql)
 
 -- USAGE lets a role "see into" the schema; it does not grant table access.
-GRANT USAGE ON SCHEMA robot, vision TO robot_writer, grafana_ro;
+GRANT USAGE ON SCHEMA robot, vision, drone TO robot_writer, grafana_ro;
 
 -- ----------------------------------------------------------------------------
 -- 4. Default privileges for tables/sequences created LATER by postgres.
 --    (Migration files in sql/ are run as postgres, so these apply to them.)
 -- ----------------------------------------------------------------------------
 -- Writer: full DML on tables + use of BIGSERIAL sequences.
-ALTER DEFAULT PRIVILEGES IN SCHEMA robot, vision
+ALTER DEFAULT PRIVILEGES IN SCHEMA robot, vision, drone
     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO robot_writer;
-ALTER DEFAULT PRIVILEGES IN SCHEMA robot, vision
+ALTER DEFAULT PRIVILEGES IN SCHEMA robot, vision, drone
     GRANT USAGE, SELECT ON SEQUENCES TO robot_writer;
 
 -- Grafana: read-only.
-ALTER DEFAULT PRIVILEGES IN SCHEMA robot, vision
+ALTER DEFAULT PRIVILEGES IN SCHEMA robot, vision, drone
     GRANT SELECT ON TABLES TO grafana_ro;
 
 -- ----------------------------------------------------------------------------
 -- 5. Apply the same grants to any tables that ALREADY exist (re-run safety).
 -- ----------------------------------------------------------------------------
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES    IN SCHEMA robot, vision TO robot_writer;
-GRANT USAGE, SELECT                  ON ALL SEQUENCES IN SCHEMA robot, vision TO robot_writer;
-GRANT SELECT                         ON ALL TABLES    IN SCHEMA robot, vision TO grafana_ro;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES    IN SCHEMA robot, vision, drone TO robot_writer;
+GRANT USAGE, SELECT                  ON ALL SEQUENCES IN SCHEMA robot, vision, drone TO robot_writer;
+GRANT SELECT                         ON ALL TABLES    IN SCHEMA robot, vision, drone TO grafana_ro;
 
 \echo ''
 \echo '  Provisioning complete:'
 \echo '    database : robot_data'
-\echo '    schemas  : robot, vision'
+\echo '    schemas  : robot, vision, drone'
 \echo '    roles    : robot_writer (rw), grafana_ro (ro)'
 \echo ''
