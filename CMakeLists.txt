@@ -18,3 +18,16 @@ add_compile_options(-Wall -Wextra -Wpedantic)
 add_subdirectory(libcommon)
 add_subdirectory(robot_logger)
 add_subdirectory(vision_logger)
+
+# drone_logger needs GStreamer (gstreamer-1.0, -app, -video). Skipped with a
+# message when the development packages are absent, so the other loggers still build.
+option(BUILD_DRONE_LOGGER "Build drone_logger (needs GStreamer)" ON)
+if(BUILD_DRONE_LOGGER)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GST_CHECK QUIET gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0)
+    if(GST_CHECK_FOUND)
+        add_subdirectory(drone_logger)
+    else()
+        message(STATUS "GStreamer development packages not found: drone_logger is not built")
+    endif()
+endif()

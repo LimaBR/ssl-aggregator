@@ -9,6 +9,7 @@
 *.env
 .env
 # data exports
+/drone_sessions/
 /export_*/
 *.tar.gz
 *.dump

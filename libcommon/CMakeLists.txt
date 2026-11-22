@@ -4,6 +4,7 @@ find_package(Threads REQUIRED)
 
 add_library(common STATIC
     src/udp_receiver.cpp
+    src/udp_unicast_receiver.cpp
     src/timestamp.cpp
     src/config.cpp
     src/signal.cpp
